@@ -1,4 +1,3 @@
-import 'dart:ffi';
 import 'dart:typed_data';
 
 import 'package:convert/convert.dart';
@@ -9,6 +8,10 @@ import '../session_client.dart';
 import 'mnemonic.dart';
 
 class SessionClientImpl implements SessionClient {
+  SessionClientImpl({required this.getLibsodium});
+
+  final DynamicLibraryFactory getLibsodium;
+
   @override
   Future<void> loadIdentity({required String seed}) async {
     final keypair = await _computeKeypairFromSeed(seed);
@@ -28,12 +31,7 @@ class SessionClientImpl implements SessionClient {
 
     final seedUint8List = Uint8List.fromList(hex.decode(seedHex));
 
-    final sodiumFfi = LibSodiumFFI(
-      DynamicLibrary.open(
-        '/opt/homebrew/Cellar/libsodium/1.0.18_1/lib/libsodium.dylib',
-      ),
-    );
-    final sodium = await SodiumSumoInit.initFromSodiumFFI2(() => sodiumFfi);
+    final sodium = await SodiumSumoInit.init2(getLibsodium);
 
     final secureKey = sodium.secureCopy(seedUint8List);
     // This is correct!!!
